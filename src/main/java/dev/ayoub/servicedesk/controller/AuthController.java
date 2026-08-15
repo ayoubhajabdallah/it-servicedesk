@@ -7,7 +7,8 @@ import dev.ayoub.servicedesk.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
+import dev.ayoub.servicedesk.dto.AuthResponse;
+import dev.ayoub.servicedesk.dto.LoginRequest;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -30,5 +31,11 @@ public class AuthController {
                 user.getEmail(),
                 user.getRole()
         );
+    }
+    @PostMapping("/login")
+    public AuthResponse login(
+            @Valid @RequestBody LoginRequest request) {
+
+        return authService.login(request);
     }
 }
