@@ -22,27 +22,17 @@ public class TicketController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TicketResponse createTicket(@RequestBody Ticket ticket) {
-
-        Ticket created = ticketService.createTicket(ticket);
-
-        return TicketResponse.from(created);
+        return ticketService.createTicket(ticket);
     }
 
     @GetMapping
     public List<TicketResponse> getAllTickets() {
-
-        return ticketService.getAllTickets()
-                .stream()
-                .map(TicketResponse::from)
-                .toList();
+        return ticketService.getAllTickets();
     }
 
     @GetMapping("/{id}")
     public TicketResponse getTicketById(@PathVariable Long id) {
-
-        return TicketResponse.from(
-                ticketService.getTicketById(id)
-        );
+        return ticketService.getTicketById(id);
     }
 
     @PatchMapping("/{id}/status")
@@ -50,9 +40,15 @@ public class TicketController {
             @PathVariable Long id,
             @RequestParam TicketStatus status) {
 
-        return TicketResponse.from(
-                ticketService.updateStatus(id, status)
-        );
+        return ticketService.updateStatus(id, status);
+    }
+
+    @PatchMapping("/{id}/assign/{userId}")
+    public TicketResponse assignTechnician(
+            @PathVariable Long id,
+            @PathVariable Long userId) {
+
+        return ticketService.assignTechnician(id, userId);
     }
 
     @DeleteMapping("/{id}")
