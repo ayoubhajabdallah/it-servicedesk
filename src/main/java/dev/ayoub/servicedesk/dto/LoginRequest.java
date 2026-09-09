@@ -12,4 +12,7 @@ public record LoginRequest(
         @NotBlank
         String password
 ) {
+    public LoginRequest {
+        email = email == null ? null : email.trim();
+    }
 }

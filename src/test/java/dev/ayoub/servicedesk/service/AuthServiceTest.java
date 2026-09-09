@@ -10,6 +10,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,7 +38,7 @@ class AuthServiceTest {
         RegisterRequest request =
                 new RegisterRequest(
                         "Ayoub",
-                        "ayoub@example.com",
+                        "  AYOUB@Example.COM  ",
                         "StrongPass123!"
                 );
 
@@ -62,6 +64,7 @@ class AuthServiceTest {
         assertEquals(UserRole.EMPLOYEE, result.getRole());
 
         verify(passwordEncoder).encode("StrongPass123!");
+        verify(userRepository).existsByEmail("ayoub@example.com");
         verify(userRepository).save(any(User.class));
     }
 
@@ -71,23 +74,24 @@ class AuthServiceTest {
         RegisterRequest request =
                 new RegisterRequest(
                         "Ayoub",
-                        "ayoub@example.com",
+                        "  AYOUB@Example.COM  ",
                         "StrongPass123!"
                 );
 
         when(userRepository.existsByEmail("ayoub@example.com"))
                 .thenReturn(true);
 
-        IllegalArgumentException exception =
+        ResponseStatusException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
+                        ResponseStatusException.class,
                         () -> authService.register(request)
                 );
 
         assertEquals(
                 "Email already registered",
-                exception.getMessage()
+                exception.getReason()
         );
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
 
         verify(userRepository, never()).save(any());
     }
