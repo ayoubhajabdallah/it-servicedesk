@@ -13,7 +13,7 @@ The application models a simple internal IT support workflow where employees can
 - Roles: `EMPLOYEE`, `TECHNICIAN`, `ADMIN`
 - Create and retrieve support tickets
 - Ticket categories and priorities
-- Ticket status workflow
+- Ticket status updates
 - Automatic ticket creator tracking
 - Technician assignment
 - PostgreSQL persistence
@@ -120,6 +120,8 @@ Each ticket contains:
 - `RESOLVED`
 - `CLOSED`
 
+Technicians and administrators can change a ticket to any listed status; transitions are not restricted.
+
 ## REST API
 
 ### Authentication
@@ -146,6 +148,14 @@ Protected endpoints require:
 Authorization: Bearer <JWT>
 ```
 
+Ticket creation accepts only `title` (nonblank, max 150), `description` (nonblank, max 3000),
+`category`, and `priority` (both required). The server sets the creator, initial `OPEN` status,
+and timestamps; new tickets have no assignee. All authenticated users can view all tickets.
+
+Registration and login trim surrounding email whitespace and lowercase emails consistently.
+Application errors use a simple `{"error": "message"}` response: invalid requests return 400,
+invalid login credentials 401, missing tickets or assignment targets 404, and duplicate emails 409.
+
 ## Running Locally
 
 ### 1. Start PostgreSQL
@@ -156,16 +166,20 @@ docker compose up -d
 
 ### 2. Configure JWT secret
 
+JJWT requires at least 32 UTF-8 bytes for an HS256 signing key. The application uses the
+environment value directly as UTF-8 bytes, without Base64 decoding. This 32-byte example
+is for local development only; use your own randomly generated secret outside the demo.
+
 PowerShell:
 
 ```powershell
-$env:JWT_SECRET="your-secure-development-secret"
+$env:JWT_SECRET="local-demo-only-0123456789abcdef"
 ```
 
 Linux / macOS:
 
 ```bash
-export JWT_SECRET="your-secure-development-secret"
+export JWT_SECRET="local-demo-only-0123456789abcdef"
 ```
 
 ### 3. Start the application
@@ -179,7 +193,7 @@ Windows:
 Linux / macOS:
 
 ```bash
-./mvnw spring-boot:run
+sh ./mvnw spring-boot:run
 ```
 
 The API runs at:
@@ -213,10 +227,13 @@ Windows:
 Linux / macOS:
 
 ```bash
-./mvnw test
+sh ./mvnw test
 ```
 
-Tests run with an isolated H2 in-memory database.
+Tests include mocked registration tests, real JWT signing/parsing tests, and HTTP tests
+for authentication, ticket creation/validation, error statuses, and role restrictions.
+Application/HTTP tests use isolated H2 in-memory databases; they do not verify PostgreSQL
+or Docker execution. No line or branch coverage percentage is measured.
 
 ## Docker Image
 
@@ -235,10 +252,10 @@ GitHub Actions automatically runs the Maven test suite on pushes and pull reques
 - Passwords are stored using Spring Security password encoding.
 - JWT tokens are cryptographically signed and expire after a limited period.
 - API access is controlled by user roles.
-- JWT secrets are supplied through environment variables and are not committed to the repository.
+- Runtime JWT secrets are supplied through environment variables; committed examples and test keys are for local testing only.
 - Unauthenticated access to protected endpoints returns `401 Unauthorized`.
 - Authenticated users without sufficient permissions receive `403 Forbidden`.
 
 ## Project Purpose
 
-This project was developed as a personal software engineering portfolio project to demonstrate practical backend development with Java, Spring Boot, REST APIs, authentication, relational databases, testing, Docker and CI/CD.
+This project was developed as a personal software engineering portfolio project to demonstrate practical backend development with Java, Spring Boot, REST APIs, authentication, relational databases, testing, Docker and CI.

@@ -8,6 +8,9 @@ import dev.ayoub.servicedesk.dto.RegisterRequest;
 import dev.ayoub.servicedesk.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import java.util.Locale;
 import dev.ayoub.servicedesk.dto.AuthResponse;
 import dev.ayoub.servicedesk.dto.LoginRequest;
 
@@ -29,13 +32,14 @@ public class AuthService {
 
     public User register(RegisterRequest request) {
 
-        if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("Email already registered");
+        String email = normalizeEmail(request.email());
+        if (userRepository.existsByEmail(email)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 
         User user = User.builder()
                 .name(request.name())
-                .email(request.email().toLowerCase())
+                .email(email)
                 .password(passwordEncoder.encode(request.password()))
                 .role(UserRole.EMPLOYEE)
                 .build();
@@ -45,16 +49,16 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
 
     User user = userRepository
-            .findByEmail(request.email().toLowerCase())
+            .findByEmail(normalizeEmail(request.email()))
             .orElseThrow(() ->
-                    new IllegalArgumentException("Invalid email or password"));
+                    new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
 
     if (!passwordEncoder.matches(
             request.password(),
             user.getPassword())) {
 
-        throw new IllegalArgumentException(
-                "Invalid email or password"
+        throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED, "Invalid email or password"
         );
     }
 
@@ -68,5 +72,9 @@ public class AuthService {
             user.getEmail(),
             user.getRole().name()
     );
+    }
+
+    private static String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

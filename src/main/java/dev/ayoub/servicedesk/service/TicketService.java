@@ -5,11 +5,14 @@ import dev.ayoub.servicedesk.domain.TicketStatus;
 import dev.ayoub.servicedesk.domain.User;
 import dev.ayoub.servicedesk.domain.UserRole;
 import dev.ayoub.servicedesk.dto.TicketResponse;
+import dev.ayoub.servicedesk.dto.CreateTicketRequest;
 import dev.ayoub.servicedesk.repository.TicketRepository;
 import dev.ayoub.servicedesk.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -27,7 +30,7 @@ public class TicketService {
     }
 
     @Transactional
-    public TicketResponse createTicket(Ticket ticket) {
+    public TicketResponse createTicket(CreateTicketRequest request) {
 
         String email = SecurityContextHolder
                 .getContext()
@@ -37,12 +40,17 @@ public class TicketService {
         User creator = userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Authenticated user not found"));
+                        new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found"));
 
-        ticket.setId(null);
-        ticket.setStatus(TicketStatus.OPEN);
-        ticket.setCreatedBy(creator);
-        ticket.setAssignedTo(null);
+        Ticket ticket = Ticket.builder()
+                .title(request.title())
+                .description(request.description())
+                .category(request.category())
+                .priority(request.priority())
+                .status(TicketStatus.OPEN)
+                .createdBy(creator)
+                .assignedTo(null)
+                .build();
 
         Ticket saved = ticketRepository.save(ticket);
 
@@ -85,11 +93,11 @@ public class TicketService {
         User technician = userRepository
                 .findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("User not found: " + userId));
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + userId));
 
         if (technician.getRole() != UserRole.TECHNICIAN) {
-            throw new IllegalArgumentException(
-                    "Selected user is not a technician"
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Selected user is not a technician"
             );
         }
 
@@ -111,6 +119,6 @@ public class TicketService {
 
         return ticketRepository.findById(id)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Ticket not found: " + id));
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket not found: " + id));
     }
 }

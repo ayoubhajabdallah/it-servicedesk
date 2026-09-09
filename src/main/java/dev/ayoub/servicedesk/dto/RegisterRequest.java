@@ -18,4 +18,7 @@ public record RegisterRequest(
         @Size(min = 8, max = 100)
         String password
 ) {
+    public RegisterRequest {
+        email = email == null ? null : email.trim();
+    }
 }

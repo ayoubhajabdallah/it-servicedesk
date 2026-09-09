@@ -1,9 +1,10 @@
 package dev.ayoub.servicedesk.controller;
 
-import dev.ayoub.servicedesk.domain.Ticket;
+import dev.ayoub.servicedesk.dto.CreateTicketRequest;
 import dev.ayoub.servicedesk.domain.TicketStatus;
 import dev.ayoub.servicedesk.dto.TicketResponse;
 import dev.ayoub.servicedesk.service.TicketService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,8 +22,8 @@ public class TicketController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TicketResponse createTicket(@RequestBody Ticket ticket) {
-        return ticketService.createTicket(ticket);
+    public TicketResponse createTicket(@Valid @RequestBody CreateTicketRequest request) {
+        return ticketService.createTicket(request);
     }
 
     @GetMapping
